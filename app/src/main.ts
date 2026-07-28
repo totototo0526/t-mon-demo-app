@@ -30,7 +30,6 @@ let targetPathDisplay: HTMLElement | null;
 let presetSelect: HTMLSelectElement | null;
 let resultContainer: HTMLElement | null;
 let warningContainer: HTMLElement | null;
-let emptyState: HTMLElement | null;
 
 let currentTargetPath: string = "";
 let loadedPlugins: PluginManifest[] = [];
@@ -102,7 +101,9 @@ function renderCards(rules: Rule[]) {
         <span class="badge">Lift: ${rule.lift.toFixed(2)}</span>
       </div>
     `;
-    resultContainer.appendChild(card);
+    if (resultContainer) {
+      resultContainer.appendChild(card);
+    }
   });
 }
 
@@ -198,7 +199,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   presetSelect = document.querySelector("#preset-select");
   resultContainer = document.querySelector("#result-container");
   warningContainer = document.querySelector("#warning-container");
-  emptyState = document.querySelector("#empty-state");
+  warningContainer = document.querySelector("#warning-container");
 
   try {
     loadedPlugins = await invoke("get_plugins");
