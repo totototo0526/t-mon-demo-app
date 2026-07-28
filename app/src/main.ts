@@ -30,9 +30,11 @@ let targetPathDisplay: HTMLElement | null;
 let presetSelect: HTMLSelectElement | null;
 let resultContainer: HTMLElement | null;
 let warningContainer: HTMLElement | null;
+let sortSelect: HTMLSelectElement | null;
 
 let currentTargetPath: string = "";
 let loadedPlugins: PluginManifest[] = [];
+let currentRules: Rule[] = [];
 
 // テンプレートエンジン（JSON -> 自然言語カンペ変換）
 function generateKanpe(rule: Rule, preset: string): string {
@@ -97,8 +99,8 @@ function renderCards(rules: Rule[]) {
     card.innerHTML = `
       <p>${kanpeText}</p>
       <div class="meta">
-        <span class="badge">Support: ${rule.support}</span>
-        <span class="badge">Lift: ${rule.lift.toFixed(2)}</span>
+        <span class="badge" title="この組み合わせで同時に買われた回数">🎯 同時購入: ${rule.support}件</span>
+        <span class="badge" title="単独で買うより何倍売れやすいか">📈 併売効果: ${rule.lift.toFixed(2)}倍</span>
       </div>
     `;
     if (resultContainer) {
@@ -139,6 +141,19 @@ async function selectTarget() {
     if (targetPathDisplay) targetPathDisplay.textContent = `選択中: ${path}`;
     analyze(false);
   }
+}
+
+// ソート適用と再描画
+function applySortAndRender() {
+  const sortBy = sortSelect?.value || "support";
+  const sortedRules = [...currentRules].sort((a, b) => {
+    if (sortBy === "lift") {
+      return b.lift - a.lift;
+    } else {
+      return b.support - a.support;
+    }
+  });
+  renderCards(sortedRules);
 }
 
 // 分析実行
@@ -183,7 +198,8 @@ async function analyze(isSample: boolean = false) {
         }
       }
 
-      renderCards(result.rules);
+      currentRules = result.rules;
+      applySortAndRender();
     } catch (e) {
       resultContainer.innerHTML = `<div class="empty-state" style="color: #ef4444;">エラーが発生しました: ${e}</div>`;
     }
@@ -199,7 +215,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   presetSelect = document.querySelector("#preset-select");
   resultContainer = document.querySelector("#result-container");
   warningContainer = document.querySelector("#warning-container");
-  warningContainer = document.querySelector("#warning-container");
+  sortSelect = document.querySelector("#sort-select");
 
   try {
     loadedPlugins = await invoke("get_plugins");
@@ -227,6 +243,10 @@ window.addEventListener("DOMContentLoaded", async () => {
     if (resultContainer?.children.length && !resultContainer.querySelector('.empty-state')) {
       analyze(currentTargetPath === "");
     }
+  });
+  
+  sortSelect?.addEventListener("change", () => {
+    applySortAndRender();
   });
 
   document.getElementById("download-template-btn")?.addEventListener("click", async (e) => {

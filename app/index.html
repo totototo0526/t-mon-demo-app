@@ -56,9 +56,18 @@
 
       <!-- 右メインペイン：結果表示（カンペ） -->
       <section class="main-content">
-        <header>
-          <h2>生成されたカンペ（行動指示）</h2>
-          <p>分析結果から自動翻訳された、明日の営業・作業リストです。</p>
+        <header style="display: flex; justify-content: space-between; align-items: flex-end;">
+          <div>
+            <h2>生成されたカンペ（行動指示）</h2>
+            <p>分析結果から自動翻訳された、明日の営業・作業リストです。</p>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <label for="sort-select">並び順:</label>
+            <select id="sort-select" style="padding: 0.4rem 1.5rem 0.4rem 0.5rem; font-size: 0.85rem;">
+              <option value="support">🎯 同時購入数</option>
+              <option value="lift">📈 併売効果 (Lift)</option>
+            </select>
+          </div>
         </header>
         
         <div id="warning-container" style="display: none; background: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; padding: 12px; margin-bottom: 15px; border-radius: 4px; font-size: 0.85rem; color: #fca5a5;">
