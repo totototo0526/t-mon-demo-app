@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="/src/styles.css" />
+    <!-- Google Fonts for modern typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Action Auto-Bot (Tauri)</title>
+    <script type="module" src="/src/main.ts" defer></script>
+  </head>
+
+  <body>
+    <main class="app-container">
+      <!-- 左サイドバー：操作と設定 -->
+      <aside class="sidebar glass-panel">
+        <div>
+          <h1>Action Auto-Bot</h1>
+          <p>自動カンペ生成マシン（プロトタイプ）</p>
+        </div>
+        
+        <div class="control-group">
+          <label for="preset-select">活用シーン（プリセット）</label>
+          <select id="preset-select">
+            <option value="sales">💰 売上分析 (クロスセル提案)</option>
+            <option value="warehouse">📦 倉庫最適化 (ピッキング動線)</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label>商品マスターCSV (任意)</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="master-path-input" placeholder="未選択" readonly style="flex: 1; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 4px; border-radius: 4px;" />
+            <button id="select-master-btn" type="button" style="padding: 4px 8px; border-radius: 4px; border: none; cursor: pointer;">選択</button>
+          </div>
+        </div>
+
+        <div class="drop-zone" id="drop-zone" style="margin-top: 1rem;">
+          <p>分析対象のCSVファイルを選択<br><span style="font-size: 0.8rem; opacity: 0.7;">（ファイルダイアログが開きます）</span></p>
+          <button id="select-target-btn" class="primary-btn" type="button" style="margin-top: 10px;">ファイルを選択して分析</button>
+          <div id="target-path-display" style="margin-top: 10px; font-size: 0.7rem; word-break: break-all; opacity: 0.8;"></div>
+          
+          <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 15px 0;" />
+          
+          <button id="analyze-btn" style="background: transparent; border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px; border-radius: 6px; cursor: pointer; width: 100%;" type="button">（デモ）サンプルデータで試す</button>
+        </div>
+      </aside>
+
+      <!-- 右メインペイン：結果表示（カンペ） -->
+      <section class="main-content">
+        <header>
+          <h2>生成されたカンペ（行動指示）</h2>
+          <p>分析結果から自動翻訳された、明日の営業・作業リストです。</p>
+        </header>
+        
+        <div id="warning-container" style="display: none; background: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; padding: 12px; margin-bottom: 15px; border-radius: 4px; font-size: 0.85rem; color: #fca5a5;">
+        </div>
+
+        <div id="result-container" class="cards-container">
+          <div class="empty-state" id="empty-state">
+            CSVを読み込むか、「サンプルデータで試す」をクリックしてください。
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

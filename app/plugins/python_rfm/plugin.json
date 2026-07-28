@@ -1,0 +1,6 @@
+{
+  "id": "python_rfm",
+  "name": "👑 RFM優良顧客分析 (Python)",
+  "command": "python3",
+  "args": ["analyze.py"]
+}
