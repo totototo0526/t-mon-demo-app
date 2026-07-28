@@ -219,13 +219,22 @@ fn run_plugin(plugin_id: String, csv_path: String) -> Result<AnalysisResult, Str
     }
 }
 
+const SAMPLE_SALES: &str = include_str!("../../sample_sales.csv");
+const SAMPLE_MASTER: &str = include_str!("../../sample_master.csv");
+
+#[tauri::command]
+fn save_sample_csv(path: String, kind: String) -> Result<(), String> {
+    let content = if kind == "sales" { SAMPLE_SALES } else { SAMPLE_MASTER };
+    std::fs::write(&path, content).map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![analyze_csv, get_plugins, run_plugin])
+        .invoke_handler(tauri::generate_handler![analyze_csv, get_plugins, run_plugin, save_sample_csv])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

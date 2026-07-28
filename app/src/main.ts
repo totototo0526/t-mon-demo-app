@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { open } from "@tauri-apps/plugin-dialog";
+import { open, save } from "@tauri-apps/plugin-dialog";
 
 interface Rule {
   item_a: string;
@@ -225,6 +225,37 @@ window.addEventListener("DOMContentLoaded", async () => {
   presetSelect?.addEventListener("change", () => {
     if (resultContainer?.children.length && !resultContainer.querySelector('.empty-state')) {
       analyze(currentTargetPath === "");
+    }
+  });
+
+  document.getElementById("download-template-btn")?.addEventListener("click", async (e) => {
+    e.preventDefault();
+    try {
+      // 売上データ
+      const salesPath = await save({
+        title: '分析対象CSV（売上データ）のサンプルを保存',
+        defaultPath: 'sample_sales.csv',
+        filters: [{ name: 'CSV', extensions: ['csv'] }]
+      });
+      if (salesPath) {
+        await invoke("save_sample_csv", { path: salesPath, kind: "sales" });
+      }
+
+      // マスターデータ
+      const masterPath = await save({
+        title: '商品マスターCSVのサンプルを保存',
+        defaultPath: 'sample_master.csv',
+        filters: [{ name: 'CSV', extensions: ['csv'] }]
+      });
+      if (masterPath) {
+        await invoke("save_sample_csv", { path: masterPath, kind: "master" });
+      }
+
+      if (salesPath || masterPath) {
+        alert("サンプルのCSVファイルを保存しました！");
+      }
+    } catch (err) {
+      alert("保存に失敗しました: " + err);
     }
   });
 });
