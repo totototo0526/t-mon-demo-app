@@ -1,0 +1,42 @@
+name: "Release"
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: "windows-latest"
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: install frontend dependencies
+        working-directory: ./app
+        run: npm install
+
+      - name: build tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "Action Auto-Bot ${{ github.ref_name }}"
+          releaseBody: "Windows版の実行ファイル (.exe, .msi) です。Assetsからダウンロードしてインストールしてください。"
+          releaseDraft: false
+          prerelease: false
+          projectPath: "./app"
