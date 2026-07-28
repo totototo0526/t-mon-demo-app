@@ -115,6 +115,11 @@ select {
   transition: border-color 0.2s;
 }
 
+select option, select optgroup {
+  background: #1e293b;
+  color: #f8fafc;
+}
+
 select:focus {
   border-color: var(--primary);
 }
