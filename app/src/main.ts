@@ -163,16 +163,24 @@ async function analyze(isSample: boolean = false) {
     if (warningContainer) warningContainer.style.display = "none";
     
     try {
-      const path = isSample 
-        ? "/media/ksp-zorin-001/WORK_DISK3/workspace/t-mon_demo/app/sample_sales.csv" 
-        : currentTargetPath;
-      
+      let path = currentTargetPath;
+      let masterPath = masterPathInput?.value || null;
+
+      if (isSample) {
+        try {
+          const paths: [string, string] = await invoke("get_sample_paths");
+          path = paths[0];
+          masterPath = paths[1];
+        } catch (e) {
+          resultContainer.innerHTML = `<div class="empty-state" style="color: #ef4444;">サンプルデータの準備に失敗しました: ${e}</div>`;
+          return;
+        }
+      }
+
       if (!path) {
         resultContainer.innerHTML = `<div class="empty-state">対象のCSVファイルを選択してください。</div>`;
         return;
       }
-
-      const masterPath = masterPathInput?.value || null;
       const presetValue = presetSelect?.value || "";
       let result: AnalysisResult;
 

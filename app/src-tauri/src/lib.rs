@@ -228,13 +228,28 @@ fn save_sample_csv(path: String, kind: String) -> Result<(), String> {
     std::fs::write(&path, content).map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+fn get_sample_paths() -> Result<(String, String), String> {
+    let temp_dir = std::env::temp_dir();
+    let sales_path = temp_dir.join("sample_sales.csv");
+    let master_path = temp_dir.join("sample_master.csv");
+
+    std::fs::write(&sales_path, SAMPLE_SALES).map_err(|e| e.to_string())?;
+    std::fs::write(&master_path, SAMPLE_MASTER).map_err(|e| e.to_string())?;
+
+    Ok((
+        sales_path.to_string_lossy().to_string(),
+        master_path.to_string_lossy().to_string()
+    ))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![analyze_csv, get_plugins, run_plugin, save_sample_csv])
+        .invoke_handler(tauri::generate_handler![analyze_csv, get_plugins, run_plugin, save_sample_csv, get_sample_paths])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
