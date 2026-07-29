@@ -274,3 +274,103 @@ select:focus {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
 }
+
+/* ==========================================================================
+   Print Styles (PDF Export)
+   ========================================================================== */
+@media print {
+  /* Reset background and colors for printing */
+  body, .app-container, .main-content, .kanpe-card {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Hide sidebar and controls */
+  .sidebar,
+  header > div:last-child, /* The button row */
+  #warning-container {
+    display: none !important;
+  }
+
+  /* Expand main content to full width */
+  .main-content {
+    display: block !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  
+  .app-container {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  body {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Style headings and text for print */
+  h2 {
+    color: #000000 !important;
+    border-bottom: 2px solid #000;
+    padding-bottom: 5px;
+  }
+  p {
+    color: #333333 !important;
+  }
+
+  /* Style cards for print */
+  .cards-container {
+    display: block !important;
+  }
+  .kanpe-card {
+    border-left: 4px solid #333 !important;
+    border-bottom: 1px solid #ccc !important;
+    border-top: 1px solid #eee !important;
+    border-right: 1px solid #eee !important;
+    margin-bottom: 15px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  
+  .kanpe-card strong {
+    color: #000000 !important;
+    text-decoration: underline;
+  }
+  
+  .kanpe-card .meta {
+    color: #555555 !important;
+  }
+  
+  /* Explanation and internal text blocks */
+  .kanpe-card div, .kanpe-card span {
+    color: #333333 !important;
+    background: transparent !important;
+  }
+
+  .badge {
+    border: 1px solid #000 !important;
+    color: #000 !important;
+    background: transparent !important;
+  }
+
+  /* Utility to hide chart during print if requested */
+  body.hide-chart-for-print #chart-details {
+    display: none !important;
+  }
+  
+  #chart-details {
+    border: 1px solid #ccc !important;
+  }
+  
+  #chart-details div {
+    height: auto !important;
+  }
+  
+  #chart-details summary {
+    display: none !important;
+  }
+}
+

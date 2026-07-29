@@ -1,6 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { open, save } from "@tauri-apps/plugin-dialog";
 
+declare var Chart: any;
+
 interface Rule {
   item_a: string;
   item_b: string;
@@ -107,6 +109,193 @@ let currentRfmSegments: RfmSegment[] = [];
 let currentTrendItems: TrendItem[] = [];
 let currentAnomalyItems: AnomalyItem[] = [];
 let currentClusterGroups: ClusterGroup[] = [];
+let currentChart: any = null;
+
+function destroyChart() {
+  if (currentChart) {
+    currentChart.destroy();
+    currentChart = null;
+  }
+}
+
+function setChartVisibility(visible: boolean) {
+  const chartDetails = document.getElementById("chart-details");
+  if (chartDetails) {
+    chartDetails.style.display = visible ? "block" : "none";
+  }
+}
+
+// 印刷用プラグイン
+const printBgPlugin = {
+  id: 'printBg',
+  beforeDraw: (chart: any) => {
+    if (chart.config.options.plugins?.printBg?.isPrinting) {
+      const ctx = chart.ctx;
+      ctx.save();
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, chart.width, chart.height);
+      ctx.restore();
+    }
+  }
+};
+Chart.register(printBgPlugin);
+
+function setChartTheme(isPrint: boolean) {
+  if (!currentChart) return;
+  const textColor = isPrint ? '#000000' : '#ffffff';
+  const gridColor = isPrint ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.2)';
+
+  currentChart.options.color = textColor;
+  if (currentChart.options.scales) {
+    if (currentChart.options.scales.x) {
+      currentChart.options.scales.x.ticks.color = textColor;
+      currentChart.options.scales.x.grid.color = gridColor;
+    }
+    if (currentChart.options.scales.y) {
+      currentChart.options.scales.y.ticks.color = textColor;
+      currentChart.options.scales.y.grid.color = gridColor;
+    }
+  }
+  if (currentChart.options.plugins && currentChart.options.plugins.legend) {
+    currentChart.options.plugins.legend.labels.color = textColor;
+  }
+  
+  // フラグをセットしてプラグインに白背景を描画させる
+  if (!currentChart.options.plugins) currentChart.options.plugins = {};
+  if (!currentChart.options.plugins.printBg) currentChart.options.plugins.printBg = {};
+  currentChart.options.plugins.printBg.isPrinting = isPrint;
+  
+  // アニメーションなしで即時描画
+  currentChart.update('none');
+}
+
+window.addEventListener("beforeprint", () => setChartTheme(true));
+window.addEventListener("afterprint", () => setChartTheme(false));
+
+const CHART_COLORS = {
+  blue: 'rgba(54, 162, 235, 0.7)',
+  red: 'rgba(255, 99, 132, 0.7)',
+  green: 'rgba(75, 192, 192, 0.7)',
+  yellow: 'rgba(255, 206, 86, 0.7)',
+  purple: 'rgba(153, 102, 255, 0.7)',
+  orange: 'rgba(255, 159, 64, 0.7)',
+  border: 'rgba(255, 255, 255, 0.2)',
+  text: '#ffffff'
+};
+
+function getChartContext(): CanvasRenderingContext2D | null {
+  const canvas = document.getElementById("summary-chart") as HTMLCanvasElement;
+  if (!canvas) return null;
+  return canvas.getContext("2d");
+}
+
+function drawSimpleBarChart(labels: string[], data: number[], label: string) {
+  destroyChart();
+  setChartVisibility(true);
+  const ctx = getChartContext();
+  if (!ctx) return;
+  
+  currentChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: label,
+        data: data,
+        backgroundColor: CHART_COLORS.blue,
+        borderColor: CHART_COLORS.blue,
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      color: CHART_COLORS.text,
+      scales: {
+        x: { ticks: { color: CHART_COLORS.text }, grid: { color: CHART_COLORS.border } },
+        y: { beginAtZero: true, ticks: { color: CHART_COLORS.text }, grid: { color: CHART_COLORS.border } }
+      },
+      plugins: {
+        legend: { labels: { color: CHART_COLORS.text } }
+      }
+    }
+  });
+}
+
+function drawComparisonBarChart(labels: string[], data1: number[], label1: string, data2: number[], label2: string) {
+  destroyChart();
+  setChartVisibility(true);
+  const ctx = getChartContext();
+  if (!ctx) return;
+
+  currentChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: label1,
+          data: data1,
+          backgroundColor: CHART_COLORS.blue,
+        },
+        {
+          label: label2,
+          data: data2,
+          backgroundColor: CHART_COLORS.green,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      color: CHART_COLORS.text,
+      scales: {
+        x: { ticks: { color: CHART_COLORS.text }, grid: { color: CHART_COLORS.border } },
+        y: { beginAtZero: true, ticks: { color: CHART_COLORS.text }, grid: { color: CHART_COLORS.border } }
+      },
+      plugins: {
+        legend: { labels: { color: CHART_COLORS.text } }
+      }
+    }
+  });
+}
+
+function drawDoughnutChart(labels: string[], data: number[]) {
+  destroyChart();
+  setChartVisibility(true);
+  const ctx = getChartContext();
+  if (!ctx) return;
+
+  // 各データの割合（%）を計算してラベルに付与する
+  const total = data.reduce((a, b) => a + b, 0);
+  const labelsWithPercent = labels.map((label, i) => {
+    const percent = total > 0 ? ((data[i] / total) * 100).toFixed(1) : "0";
+    return `${label} (${percent}%)`;
+  });
+
+  currentChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: labelsWithPercent,
+      datasets: [{
+        data: data,
+        backgroundColor: [
+          CHART_COLORS.red, CHART_COLORS.blue, CHART_COLORS.yellow, CHART_COLORS.green, CHART_COLORS.purple, CHART_COLORS.orange
+        ],
+        borderColor: '#2d3748',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      color: CHART_COLORS.text,
+      plugins: {
+        legend: { position: 'right', labels: { color: CHART_COLORS.text } }
+      }
+    }
+  });
+}
 
 // テンプレートエンジン（JSON -> 自然言語カンペ変換）
 function generateKanpe(rule: Rule, preset: string): string {
@@ -154,11 +343,25 @@ function generateKanpe(rule: Rule, preset: string): string {
 function renderCards(rules: Rule[]) {
   if (!resultContainer) return;
   resultContainer.innerHTML = "";
+
   const preset = presetSelect?.value || "sales";
 
   if (rules.length === 0) {
     resultContainer.innerHTML = `<div class="empty-state">分析結果が見つかりませんでした。</div>`;
+    setChartVisibility(false);
     return;
+  }
+
+  if (preset === "sales") {
+    // 棒グラフ（同時購入数トップ10）
+    const topRules = rules.slice(0, 10);
+    drawSimpleBarChart(
+      topRules.map(r => `${r.item_a} + ${r.item_b}`),
+      topRules.map(r => r.support),
+      "同時購入数 (回)"
+    );
+  } else {
+    setChartVisibility(false);
   }
 
   rules.forEach((rule, index) => {
@@ -187,8 +390,17 @@ function renderAbcCards(items: AbcItem[]) {
 
   if (items.length === 0) {
     resultContainer.innerHTML = `<div class="empty-state">分析結果が見つかりませんでした。</div>`;
+    setChartVisibility(false);
     return;
   }
+
+  // 棒グラフ（売上/頻度 トップ10）
+  const topItems = items.slice(0, 10);
+  drawSimpleBarChart(
+    topItems.map(i => i.item_name),
+    topItems.map(i => i.count),
+    "売上/販売回数"
+  );
 
   items.forEach((item, index) => {
     const card = document.createElement("div");
@@ -236,8 +448,15 @@ function renderRfmCards(segments: RfmSegment[]) {
 
   if (segments.length === 0) {
     resultContainer.innerHTML = `<div class="empty-state">分析結果が見つかりませんでした。</div>`;
+    setChartVisibility(false);
     return;
   }
+
+  // ドーナツグラフ（セグメント構成比）
+  drawDoughnutChart(
+    segments.map(s => s.segment_name),
+    segments.map(s => s.customer_count)
+  );
 
   segments.forEach((segment, index) => {
     const card = document.createElement("div");
@@ -287,8 +506,19 @@ function renderTrendCards(items: TrendItem[]) {
 
   if (items.length === 0) {
     resultContainer.innerHTML = `<div class="empty-state">分析結果が見つかりませんでした。</div>`;
+    setChartVisibility(false);
     return;
   }
+
+  // 比較棒グラフ（過去 vs 直近）※成長率上位トップ5
+  const topTrends = items.slice(0, 5);
+  drawComparisonBarChart(
+    topTrends.map(i => i.item_name),
+    topTrends.map(i => i.past_amount),
+    "過去の売上",
+    topTrends.map(i => i.recent_amount),
+    "直近の売上"
+  );
 
   items.forEach((item, index) => {
     const card = document.createElement("div");
@@ -343,8 +573,19 @@ function renderAnomalyCards(items: AnomalyItem[]) {
 
   if (items.length === 0) {
     resultContainer.innerHTML = `<div class="empty-state">分析結果が見つかりませんでした。</div>`;
+    setChartVisibility(false);
     return;
   }
+
+  // 比較棒グラフ（平均 vs 今回）トップ5
+  const topAnomalies = items.slice(0, 5);
+  drawComparisonBarChart(
+    topAnomalies.map(i => `顧客 ${i.customer_id}`),
+    topAnomalies.map(i => i.average_amount),
+    "平均注文量",
+    topAnomalies.map(i => i.amount),
+    "今回の注文量"
+  );
 
   items.forEach((item, index) => {
     const card = document.createElement("div");
@@ -389,8 +630,15 @@ function renderClusterCards(groups: ClusterGroup[]) {
 
   if (groups.length === 0) {
     resultContainer.innerHTML = `<div class="empty-state">分析結果が見つかりませんでした。</div>`;
+    setChartVisibility(false);
     return;
   }
+
+  // ドーナツグラフ（クラスターボリューム）
+  drawDoughnutChart(
+    groups.map(g => g.cluster_name),
+    groups.map(g => g.size)
+  );
 
   groups.forEach((group, index) => {
     const card = document.createElement("div");
@@ -705,5 +953,78 @@ window.addEventListener("DOMContentLoaded", async () => {
     } catch (err) {
       alert("保存に失敗しました: " + err);
     }
+  });
+
+  // 印刷（PDF出力）ボタン - グラフあり
+  document.querySelector("#print-with-graph-btn")?.addEventListener("click", () => {
+    const details = document.getElementById("chart-details") as HTMLDetailsElement;
+    if (details) details.open = true;
+    
+    document.body.classList.remove("hide-chart-for-print");
+
+    const canvas = document.getElementById("summary-chart") as HTMLCanvasElement;
+    let img: HTMLImageElement | null = null;
+
+    if (canvas && currentChart) {
+      // 元のサイズを退避
+      const origWidth = canvas.style.width;
+      const origHeight = canvas.style.height;
+
+      // 印刷用に見栄えのする高解像度（アスペクト比2:1）に強制リサイズ
+      currentChart.resize(900, 450);
+
+      // 印刷用テーマ（文字黒・背景白）に切り替え
+      setChartTheme(true);
+
+      // WebKitのcanvas印刷真っ黒バグを確実に回避するため、白背景のテンポラリCanvasを作成して画像化する
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = canvas.width;
+      tempCanvas.height = canvas.height;
+      const ctx = tempCanvas.getContext("2d");
+      if (ctx) {
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+        ctx.drawImage(canvas, 0, 0);
+      }
+
+      img = document.createElement("img");
+      img.id = "print-chart-img";
+      img.src = tempCanvas.toDataURL("image/png");
+      img.style.maxWidth = "800px";
+      img.style.width = "100%";
+      img.style.height = "auto";
+      img.style.margin = "0 auto";
+      img.style.display = "block";
+      
+      canvas.style.display = "none";
+      canvas.parentElement?.appendChild(img);
+
+      // 少し待ってから印刷（画像のレンダリング待ち）
+      setTimeout(() => {
+        window.print();
+        
+        // 印刷が終わったら元に戻す
+        if (img) img.remove();
+        if (canvas) {
+          canvas.style.display = "block";
+          canvas.style.width = origWidth;
+          canvas.style.height = origHeight;
+          currentChart.resize();
+        }
+        setChartTheme(false);
+      }, 100);
+    } else {
+      window.print();
+    }
+  });
+
+  // 印刷（PDF出力）ボタン - グラフなし（カンペのみ）
+  document.querySelector("#print-no-graph-btn")?.addEventListener("click", () => {
+    document.body.classList.add("hide-chart-for-print");
+    window.print();
+    // 印刷ダイアログを閉じた後にクラスを戻す (setTimeoutで遅延実行)
+    setTimeout(() => {
+      document.body.classList.remove("hide-chart-for-print");
+    }, 1000);
   });
 });
