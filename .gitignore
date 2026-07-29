@@ -4,3 +4,9 @@ target/
 app/src-tauri/target/
 app/dist/
 .env
+
+# AI internal notes & binaries
+agent.md
+docs/
+installers/
+
